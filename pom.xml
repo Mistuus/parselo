@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.x2java</groupId>
-  <artifactId>x2java</artifactId>
+  <groupId>com.parselo</groupId>
+  <artifactId>parselo</artifactId>
   <version>1.0-SNAPSHOT</version>
   <build>
     <plugins>
@@ -19,6 +19,16 @@
       </plugin>
     </plugins>
   </build>
+
+  <dependencies>
+    <!--XLS parsing libraries-->
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>3.17</version>
+    </dependency>
+
+  </dependencies>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
