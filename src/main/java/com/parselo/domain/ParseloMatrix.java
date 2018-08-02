@@ -6,9 +6,12 @@ import org.joda.beans.gen.BeanDefinition;
 import org.joda.beans.gen.PropertyDefinition;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.function.BiFunction;
 
 import org.joda.beans.JodaBeanUtils;
 import org.joda.beans.MetaBean;
@@ -26,6 +29,20 @@ public final class ParseloMatrix<T> implements ImmutableBean {
 
   @PropertyDefinition(validate = "notNull")
   private final ImmutableList<ImmutableList<T>> rows;
+
+  public static <T> ParseloMatrix<T> of(int rows, int columns, BiFunction<Integer, Integer, T> valueProvider) {
+    LinkedList<ImmutableList<T>> rowList = Lists.newLinkedList();
+
+    for (int row = 0; row < rows; row++) {
+      ImmutableList.Builder<T> columnList = ImmutableList.builder();
+      for (int col = 0; col < columns; col++) {
+        columnList.add(valueProvider.apply(row, col));
+      }
+      rowList.add(columnList.build());
+    }
+
+    return new ParseloMatrix<>(rowList);
+  }
 
   //---------------------------------------------------------------
   public ImmutableList<T> getRow(int row) {

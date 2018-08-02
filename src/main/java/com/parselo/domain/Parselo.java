@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.stream.StreamSupport;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
@@ -55,6 +56,7 @@ public class Parselo {
     }
   }
 
+  //--------------------------------------------------------------------
   /**
    * Provide all the sheet names from the workbook.
    *
@@ -92,6 +94,36 @@ public class Parselo {
     }
   }
 
+  /**
+   * Parse a string matrix described by the specification from the given sheet name. The matrix will parse empty/null
+   * cells as empty strings.
+   *
+   * @param sheetName the sheet name to parse
+   * @param spec the matrix specification
+   * @return the string matrix
+   * @throws IllegalArgumentException if the sheet is null or the spec is null
+   */
+  public ParseloMatrix<String> parseStringMatrix(String sheetName, ParseloSpec spec) {
+    HSSFSheet sheet = workbook.getSheet(sheetName);
+    if (sheet == null) {
+      throw new IllegalArgumentException("No sheet found for name: " + sheetName);
+    }
+    if (spec == null) {
+      throw new IllegalArgumentException("Spec cannot be null.");
+    }
+
+    final int rowStart = spec.getRowStart();
+    final int columnStart = spec.getColumnStartIndex();
+
+    BiFunction<Integer, Integer, String> valueFunction =
+        (rowOffset, columnOffset) -> FORMATTER.formatCellValue(sheet
+                .getRow(rowStart + rowOffset)
+                .getCell(columnStart + columnOffset));
+
+    return ParseloMatrix.of(spec.rows(), spec.columns(), valueFunction);
+  }
+
+  //--------------------------------------------------------------------
   private List<String> parseArray(HSSFSheet sheet, ParseloSpec spec) {
     List<String> array = Lists.newLinkedList();
     int rowStart = spec.getRowStart();
@@ -106,4 +138,5 @@ public class Parselo {
 
     return array;
   }
+
 }
