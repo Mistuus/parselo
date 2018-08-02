@@ -2,8 +2,10 @@ package com.parselo.domain;
 
 import org.joda.beans.ImmutableBean;
 import org.joda.beans.gen.BeanDefinition;
+import org.joda.beans.gen.ImmutableValidator;
 import org.joda.beans.gen.PropertyDefinition;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -16,46 +18,133 @@ import org.joda.beans.impl.direct.DirectMetaBean;
 import org.joda.beans.impl.direct.DirectMetaProperty;
 import org.joda.beans.impl.direct.DirectMetaPropertyMap;
 
-import com.parselo.utilities.ColumnIndexCalculator;
+import com.google.common.annotations.VisibleForTesting;
 
 /**
- * Specification of an area to be parsed. Used by {@link com.parselo.Parselo}.
+ * Specification of an area to be parsed. Used by {@link Parselo}.
+ * <p>
+ * The specification will validate whether the rows are positive integers, if the columns are valid xls column letters
+ * and whether the start/end bounds make sense.
  */
 @BeanDefinition
 public final class ParseloSpec implements ImmutableBean {
 
-  @PropertyDefinition(validate = "isPositiveNumber")
+  /**
+   * The start row (zero-based) index.
+   */
+  @PropertyDefinition
   private final int rowStart;
-
-  @PropertyDefinition(validate = "isPositiveNumber")
+  /**
+   * The end row (zero-based) index.
+   */
+  @PropertyDefinition
   private final int rowEnd;
+  /**
+   * The column start letters as present in the xls (case insensitive). Eg: 'D', 'AA', 'BCA'
+   */
+  @PropertyDefinition(validate = "notBlank", get = "private")
+  private final String columnStart;
+  /**
+   * The column end letters as present in the xls (case insensitive). Eg: 'D', 'AA', 'BCA'
+   */
+  @PropertyDefinition(validate = "notBlank", get = "private")
+  private final String columnEnd;
 
-  @PropertyDefinition(validate = "isExcelColumn")
-  private final String cellStart;
+  /**
+   * Check whether the specification represents an horizontal array, i.e. only one row.
+   *
+   * @return true if it does, false otherwise
+   */
+  public boolean isHorizontalArray() {
+    return rows() == 1;
+  }
 
-  @PropertyDefinition(validate = "isExcelColumn")
-  private final String cellEnd;
+  /**
+   * Check whether the specification represents a vertical array, i.e only one column.
+   *
+   * @return true if it does, false otherwise
+   */
+  public boolean isVerticalArray() {
+    return columns() == 1;
+  }
 
-  private static void isPositiveNumber(int value, String propertyName) {
-    if (value < 0) {
-      throw new IllegalArgumentException(propertyName + " expected to be a positive number but was '" + value + "'");
+  /**
+   * The number of rows defined by this specification.
+   *
+   * @return the number of rows defined by this specification
+   */
+  public int rows() {
+    return rowEnd - rowStart + 1;
+  }
+
+  /**
+   * The number of columns defined by this specification.
+   *
+   * @return the number of columns defined by this specification.
+   */
+  public int columns() {
+    return getColumnEndIndex() - getColumnStartIndex() + 1;
+  }
+
+  /**
+   * Provide the zero-based index for the start cell.
+   *
+   * @return the zero-based index of the start cell
+   */
+  public int getColumnStartIndex() {
+    return compute(columnStart);
+  }
+
+  /**
+   * Get the zero-based index of the end cell.
+   *
+   * @return the zero-based index of the end cell
+   */
+  public int getColumnEndIndex() {
+    return compute(columnEnd);
+  }
+
+  @VisibleForTesting
+  static int compute(String column) {
+    column = column.toUpperCase(Locale.ENGLISH);
+    if (!column.matches("[A-Z]*")) {
+      throw new IllegalArgumentException(String.format(
+          "Expecting column to be only english alphabet letters. Found '%s'",
+          column));
     }
-  }
 
-  private static void isExcelColumn(String value, String propertyName) {
-    JodaBeanUtils.notBlank(value, propertyName);
-    if (!value.matches("[a-zA-Z]*")) {
-      throw new IllegalArgumentException(propertyName + " expected to be a valid column name (e.g. 'A', 'bb', 'ZAA') " +
-          "but was '" + value + "'");
+    int position = 0;
+    int length = column.length();
+    for (int i = 0; i < length; i++) {
+      int charIdx = charIndex(column.charAt(i));
+      position += (charIdx + 1) * (int) Math.pow(26, length - i - 1);
     }
+    return position - 1;
   }
 
-  public int getCellStartNumber() {
-    return ColumnIndexCalculator.compute(cellStart);
+  @VisibleForTesting
+  static int charIndex(char x) {
+    return x - 'A';
   }
-
-  public int getCellEndNumber() {
-    return ColumnIndexCalculator.compute(cellEnd);
+  //------------------------------------------------------------------
+  @ImmutableValidator
+  private void validate() {
+    SpecValidator.isValidRowNumber(rowStart, "rowStart");
+    SpecValidator.isValidRowNumber(rowEnd, "rowEnd");
+    SpecValidator.isExcelColumn(columnStart, "columnStart");
+    SpecValidator.isExcelColumn(columnEnd, "columnEnd");
+    if (rowStart > rowEnd) {
+      throw new IllegalArgumentException(String.format(
+          "rowStart[%d] cannot be after rowEnd[%d]",
+          rowStart,
+          rowEnd));
+    }
+    if (columnStart.compareToIgnoreCase(columnEnd) > 0) {
+      throw new IllegalArgumentException(String.format(
+          "columnStart[%s] cannot be after columnEnd[%s]",
+          columnStart.toUpperCase(Locale.ENGLISH),
+          columnEnd.toUpperCase(Locale.ENGLISH)));
+    }
   }
 
   //------------------------- AUTOGENERATED START -------------------------
@@ -82,16 +171,15 @@ public final class ParseloSpec implements ImmutableBean {
   private ParseloSpec(
       int rowStart,
       int rowEnd,
-      String cellStart,
-      String cellEnd) {
-    isPositiveNumber(rowStart, "rowStart");
-    isPositiveNumber(rowEnd, "rowEnd");
-    isExcelColumn(cellStart, "cellStart");
-    isExcelColumn(cellEnd, "cellEnd");
+      String columnStart,
+      String columnEnd) {
+    JodaBeanUtils.notBlank(columnStart, "columnStart");
+    JodaBeanUtils.notBlank(columnEnd, "columnEnd");
     this.rowStart = rowStart;
     this.rowEnd = rowEnd;
-    this.cellStart = cellStart;
-    this.cellEnd = cellEnd;
+    this.columnStart = columnStart;
+    this.columnEnd = columnEnd;
+    validate();
   }
 
   @Override
@@ -101,7 +189,7 @@ public final class ParseloSpec implements ImmutableBean {
 
   //-----------------------------------------------------------------------
   /**
-   * Gets the rowStart.
+   * Gets the start row (zero-based) index.
    * @return the value of the property
    */
   public int getRowStart() {
@@ -110,7 +198,7 @@ public final class ParseloSpec implements ImmutableBean {
 
   //-----------------------------------------------------------------------
   /**
-   * Gets the rowEnd.
+   * Gets the end row (zero-based) index.
    * @return the value of the property
    */
   public int getRowEnd() {
@@ -119,20 +207,20 @@ public final class ParseloSpec implements ImmutableBean {
 
   //-----------------------------------------------------------------------
   /**
-   * Gets the cellStart.
-   * @return the value of the property
+   * Gets the column start letters as present in the xls (case insensitive). Eg: 'D', 'AA', 'BCA'
+   * @return the value of the property, not blank
    */
-  public String getCellStart() {
-    return cellStart;
+  private String getColumnStart() {
+    return columnStart;
   }
 
   //-----------------------------------------------------------------------
   /**
-   * Gets the cellEnd.
-   * @return the value of the property
+   * Gets the column end letters as present in the xls (case insensitive). Eg: 'D', 'AA', 'BCA'
+   * @return the value of the property, not blank
    */
-  public String getCellEnd() {
-    return cellEnd;
+  private String getColumnEnd() {
+    return columnEnd;
   }
 
   //-----------------------------------------------------------------------
@@ -153,8 +241,8 @@ public final class ParseloSpec implements ImmutableBean {
       ParseloSpec other = (ParseloSpec) obj;
       return (rowStart == other.rowStart) &&
           (rowEnd == other.rowEnd) &&
-          JodaBeanUtils.equal(cellStart, other.cellStart) &&
-          JodaBeanUtils.equal(cellEnd, other.cellEnd);
+          JodaBeanUtils.equal(columnStart, other.columnStart) &&
+          JodaBeanUtils.equal(columnEnd, other.columnEnd);
     }
     return false;
   }
@@ -164,8 +252,8 @@ public final class ParseloSpec implements ImmutableBean {
     int hash = getClass().hashCode();
     hash = hash * 31 + JodaBeanUtils.hashCode(rowStart);
     hash = hash * 31 + JodaBeanUtils.hashCode(rowEnd);
-    hash = hash * 31 + JodaBeanUtils.hashCode(cellStart);
-    hash = hash * 31 + JodaBeanUtils.hashCode(cellEnd);
+    hash = hash * 31 + JodaBeanUtils.hashCode(columnStart);
+    hash = hash * 31 + JodaBeanUtils.hashCode(columnEnd);
     return hash;
   }
 
@@ -175,8 +263,8 @@ public final class ParseloSpec implements ImmutableBean {
     buf.append("ParseloSpec{");
     buf.append("rowStart").append('=').append(rowStart).append(',').append(' ');
     buf.append("rowEnd").append('=').append(rowEnd).append(',').append(' ');
-    buf.append("cellStart").append('=').append(cellStart).append(',').append(' ');
-    buf.append("cellEnd").append('=').append(JodaBeanUtils.toString(cellEnd));
+    buf.append("columnStart").append('=').append(columnStart).append(',').append(' ');
+    buf.append("columnEnd").append('=').append(JodaBeanUtils.toString(columnEnd));
     buf.append('}');
     return buf.toString();
   }
@@ -202,15 +290,15 @@ public final class ParseloSpec implements ImmutableBean {
     private final MetaProperty<Integer> rowEnd = DirectMetaProperty.ofImmutable(
         this, "rowEnd", ParseloSpec.class, Integer.TYPE);
     /**
-     * The meta-property for the {@code cellStart} property.
+     * The meta-property for the {@code columnStart} property.
      */
-    private final MetaProperty<String> cellStart = DirectMetaProperty.ofImmutable(
-        this, "cellStart", ParseloSpec.class, String.class);
+    private final MetaProperty<String> columnStart = DirectMetaProperty.ofImmutable(
+        this, "columnStart", ParseloSpec.class, String.class);
     /**
-     * The meta-property for the {@code cellEnd} property.
+     * The meta-property for the {@code columnEnd} property.
      */
-    private final MetaProperty<String> cellEnd = DirectMetaProperty.ofImmutable(
-        this, "cellEnd", ParseloSpec.class, String.class);
+    private final MetaProperty<String> columnEnd = DirectMetaProperty.ofImmutable(
+        this, "columnEnd", ParseloSpec.class, String.class);
     /**
      * The meta-properties.
      */
@@ -218,8 +306,8 @@ public final class ParseloSpec implements ImmutableBean {
         this, null,
         "rowStart",
         "rowEnd",
-        "cellStart",
-        "cellEnd");
+        "columnStart",
+        "columnEnd");
 
     /**
      * Restricted constructor.
@@ -234,10 +322,10 @@ public final class ParseloSpec implements ImmutableBean {
           return rowStart;
         case -925118303:  // rowEnd
           return rowEnd;
-        case 1619122208:  // cellStart
-          return cellStart;
-        case 663122969:  // cellEnd
-          return cellEnd;
+        case -845830484:  // columnStart
+          return columnStart;
+        case -2146142811:  // columnEnd
+          return columnEnd;
       }
       return super.metaPropertyGet(propertyName);
     }
@@ -275,19 +363,19 @@ public final class ParseloSpec implements ImmutableBean {
     }
 
     /**
-     * The meta-property for the {@code cellStart} property.
+     * The meta-property for the {@code columnStart} property.
      * @return the meta-property, not null
      */
-    public MetaProperty<String> cellStart() {
-      return cellStart;
+    public MetaProperty<String> columnStart() {
+      return columnStart;
     }
 
     /**
-     * The meta-property for the {@code cellEnd} property.
+     * The meta-property for the {@code columnEnd} property.
      * @return the meta-property, not null
      */
-    public MetaProperty<String> cellEnd() {
-      return cellEnd;
+    public MetaProperty<String> columnEnd() {
+      return columnEnd;
     }
 
     //-----------------------------------------------------------------------
@@ -298,10 +386,10 @@ public final class ParseloSpec implements ImmutableBean {
           return ((ParseloSpec) bean).getRowStart();
         case -925118303:  // rowEnd
           return ((ParseloSpec) bean).getRowEnd();
-        case 1619122208:  // cellStart
-          return ((ParseloSpec) bean).getCellStart();
-        case 663122969:  // cellEnd
-          return ((ParseloSpec) bean).getCellEnd();
+        case -845830484:  // columnStart
+          return ((ParseloSpec) bean).getColumnStart();
+        case -2146142811:  // columnEnd
+          return ((ParseloSpec) bean).getColumnEnd();
       }
       return super.propertyGet(bean, propertyName, quiet);
     }
@@ -325,8 +413,8 @@ public final class ParseloSpec implements ImmutableBean {
 
     private int rowStart;
     private int rowEnd;
-    private String cellStart;
-    private String cellEnd;
+    private String columnStart;
+    private String columnEnd;
 
     /**
      * Restricted constructor.
@@ -341,8 +429,8 @@ public final class ParseloSpec implements ImmutableBean {
     private Builder(ParseloSpec beanToCopy) {
       this.rowStart = beanToCopy.getRowStart();
       this.rowEnd = beanToCopy.getRowEnd();
-      this.cellStart = beanToCopy.getCellStart();
-      this.cellEnd = beanToCopy.getCellEnd();
+      this.columnStart = beanToCopy.getColumnStart();
+      this.columnEnd = beanToCopy.getColumnEnd();
     }
 
     //-----------------------------------------------------------------------
@@ -353,10 +441,10 @@ public final class ParseloSpec implements ImmutableBean {
           return rowStart;
         case -925118303:  // rowEnd
           return rowEnd;
-        case 1619122208:  // cellStart
-          return cellStart;
-        case 663122969:  // cellEnd
-          return cellEnd;
+        case -845830484:  // columnStart
+          return columnStart;
+        case -2146142811:  // columnEnd
+          return columnEnd;
         default:
           throw new NoSuchElementException("Unknown property: " + propertyName);
       }
@@ -371,11 +459,11 @@ public final class ParseloSpec implements ImmutableBean {
         case -925118303:  // rowEnd
           this.rowEnd = (Integer) newValue;
           break;
-        case 1619122208:  // cellStart
-          this.cellStart = (String) newValue;
+        case -845830484:  // columnStart
+          this.columnStart = (String) newValue;
           break;
-        case 663122969:  // cellEnd
-          this.cellEnd = (String) newValue;
+        case -2146142811:  // columnEnd
+          this.columnEnd = (String) newValue;
           break;
         default:
           throw new NoSuchElementException("Unknown property: " + propertyName);
@@ -394,52 +482,50 @@ public final class ParseloSpec implements ImmutableBean {
       return new ParseloSpec(
           rowStart,
           rowEnd,
-          cellStart,
-          cellEnd);
+          columnStart,
+          columnEnd);
     }
 
     //-----------------------------------------------------------------------
     /**
-     * Sets the rowStart.
+     * Sets the start row (zero-based) index.
      * @param rowStart  the new value
      * @return this, for chaining, not null
      */
     public Builder rowStart(int rowStart) {
-      isPositiveNumber(rowStart, "rowStart");
       this.rowStart = rowStart;
       return this;
     }
 
     /**
-     * Sets the rowEnd.
+     * Sets the end row (zero-based) index.
      * @param rowEnd  the new value
      * @return this, for chaining, not null
      */
     public Builder rowEnd(int rowEnd) {
-      isPositiveNumber(rowEnd, "rowEnd");
       this.rowEnd = rowEnd;
       return this;
     }
 
     /**
-     * Sets the cellStart.
-     * @param cellStart  the new value
+     * Sets the column start letters as present in the xls (case insensitive). Eg: 'D', 'AA', 'BCA'
+     * @param columnStart  the new value, not blank
      * @return this, for chaining, not null
      */
-    public Builder cellStart(String cellStart) {
-      isExcelColumn(cellStart, "cellStart");
-      this.cellStart = cellStart;
+    public Builder columnStart(String columnStart) {
+      JodaBeanUtils.notBlank(columnStart, "columnStart");
+      this.columnStart = columnStart;
       return this;
     }
 
     /**
-     * Sets the cellEnd.
-     * @param cellEnd  the new value
+     * Sets the column end letters as present in the xls (case insensitive). Eg: 'D', 'AA', 'BCA'
+     * @param columnEnd  the new value, not blank
      * @return this, for chaining, not null
      */
-    public Builder cellEnd(String cellEnd) {
-      isExcelColumn(cellEnd, "cellEnd");
-      this.cellEnd = cellEnd;
+    public Builder columnEnd(String columnEnd) {
+      JodaBeanUtils.notBlank(columnEnd, "columnEnd");
+      this.columnEnd = columnEnd;
       return this;
     }
 
@@ -450,8 +536,8 @@ public final class ParseloSpec implements ImmutableBean {
       buf.append("ParseloSpec.Builder{");
       buf.append("rowStart").append('=').append(JodaBeanUtils.toString(rowStart)).append(',').append(' ');
       buf.append("rowEnd").append('=').append(JodaBeanUtils.toString(rowEnd)).append(',').append(' ');
-      buf.append("cellStart").append('=').append(JodaBeanUtils.toString(cellStart)).append(',').append(' ');
-      buf.append("cellEnd").append('=').append(JodaBeanUtils.toString(cellEnd));
+      buf.append("columnStart").append('=').append(JodaBeanUtils.toString(columnStart)).append(',').append(' ');
+      buf.append("columnEnd").append('=').append(JodaBeanUtils.toString(columnEnd));
       buf.append('}');
       return buf.toString();
     }
