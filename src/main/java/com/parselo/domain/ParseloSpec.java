@@ -18,8 +18,6 @@ import org.joda.beans.impl.direct.DirectMetaBean;
 import org.joda.beans.impl.direct.DirectMetaProperty;
 import org.joda.beans.impl.direct.DirectMetaPropertyMap;
 
-import com.google.common.annotations.VisibleForTesting;
-
 /**
  * Specification of an area to be parsed. Used by {@link Parselo}.
  * <p>
@@ -92,7 +90,7 @@ public final class ParseloSpec implements ImmutableBean {
    * @return the zero-based index of the start cell
    */
   public int getColumnStartIndex() {
-    return compute(columnStart);
+    return ExcelUtils.columnIndex(columnStart);
   }
 
   /**
@@ -101,31 +99,9 @@ public final class ParseloSpec implements ImmutableBean {
    * @return the zero-based index of the end cell
    */
   public int getColumnEndIndex() {
-    return compute(columnEnd);
+    return ExcelUtils.columnIndex(columnEnd);
   }
 
-  @VisibleForTesting
-  static int compute(String column) {
-    column = column.toUpperCase(Locale.ENGLISH);
-    if (!column.matches("[A-Z]*")) {
-      throw new IllegalArgumentException(String.format(
-          "Expecting column to be only english alphabet letters. Found '%s'",
-          column));
-    }
-
-    int position = 0;
-    int length = column.length();
-    for (int i = 0; i < length; i++) {
-      int charIdx = charIndex(column.charAt(i));
-      position += (charIdx + 1) * (int) Math.pow(26, length - i - 1);
-    }
-    return position - 1;
-  }
-
-  @VisibleForTesting
-  static int charIndex(char x) {
-    return x - 'A';
-  }
   //------------------------------------------------------------------
   @ImmutableValidator
   private void validate() {

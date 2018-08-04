@@ -24,6 +24,7 @@ import com.google.common.io.Resources;
 public class Parselo {
 
   private static final DataFormatter FORMATTER = new DataFormatter();
+  private static final ParseloAnnotationParser ANNOTATION_PARSER = new ParseloAnnotationParser();
 
   private final HSSFWorkbook workbook;
 
@@ -77,10 +78,7 @@ public class Parselo {
    * @throws IllegalArgumentException if the sheet name doesn't exist or the spec does not define an array area
    */
   public List<String> parseStringArray(String sheetName, ParseloSpec spec) {
-    HSSFSheet sheet = workbook.getSheet(sheetName);
-    if (sheet == null) {
-      throw new IllegalArgumentException("No sheet found for name: " + sheetName);
-    }
+    HSSFSheet sheet = getSheet(sheetName);
     if (spec == null) {
       throw new IllegalArgumentException("Spec cannot be null.");
     }
@@ -104,10 +102,7 @@ public class Parselo {
    * @throws IllegalArgumentException if the sheet is null or the spec is null
    */
   public ParseloMatrix<String> parseStringMatrix(String sheetName, ParseloSpec spec) {
-    HSSFSheet sheet = workbook.getSheet(sheetName);
-    if (sheet == null) {
-      throw new IllegalArgumentException("No sheet found for name: " + sheetName);
-    }
+    HSSFSheet sheet = getSheet(sheetName);
     if (spec == null) {
       throw new IllegalArgumentException("Spec cannot be null.");
     }
@@ -123,7 +118,33 @@ public class Parselo {
     return ParseloMatrix.of(spec.rows(), spec.columns(), valueFunction);
   }
 
+  /**
+   * Parse a list of objects of a specific type from the sheet given. The type of the objects parsed needs to be
+   * Parselo annotated.
+   *
+   * @param sheetName the sheet name to parse
+   * @param clazz the class with type T
+   * @param <T> the type of objects to parse
+   * @return the list of objects of type T parsed from the sheet
+   * @throws IllegalArgumentException if the class T is not annotated for Parselo
+   */
+  public <T> List<T> parse(String sheetName, Class<T> clazz) {
+    HSSFSheet sheet = getSheet(sheetName);
+    return ANNOTATION_PARSER.parse(sheet, clazz);
+  }
+
   //--------------------------------------------------------------------
+  private HSSFSheet getSheet(String sheetName) {
+    if (sheetName == null) {
+      throw new NullPointerException("SheetName cannot be null");
+    }
+    HSSFSheet sheet = workbook.getSheet(sheetName);
+    if (sheet == null) {
+      throw new IllegalArgumentException("No sheet found for name: " + sheetName);
+    }
+    return sheet;
+  }
+
   private List<String> parseArray(HSSFSheet sheet, ParseloSpec spec) {
     List<String> array = Lists.newLinkedList();
     int rowStart = spec.getRowStart();
