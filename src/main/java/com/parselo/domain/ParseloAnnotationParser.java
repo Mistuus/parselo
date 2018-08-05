@@ -4,7 +4,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
@@ -30,40 +29,52 @@ class ParseloAnnotationParser {
    * from the sheet
    */
   <T> List<T> parse(HSSFSheet sheet, Class<T> clazz) {
-    try {
-      ParseloRow annotation = extractAnnotation(clazz);
-      int rowStart = annotation.start();
-      int rowEnd = annotation.end();
-      int rowCount = rowEnd - rowStart + 1;
+    ParseloRow annotation = extractAnnotation(clazz);
+    Map<Integer, Field> colIdxToField = extractFieldPositions(clazz);
+    return parseRows(sheet, annotation, colIdxToField, clazz);
+  }
 
-      Map<Integer, Field> colIdxToField = extractFieldPositions(clazz);
-      Set<Integer> columnPositions = colIdxToField.keySet();
+  private <T> List<T> parseRows(
+      HSSFSheet sheet,
+      ParseloRow annotation,
+      Map<Integer, Field> positionToField,
+      Class<T> clazz) {
+
+    try {
+      int rowStart = annotation.start();
+      int rowCount = annotation.end() - rowStart + 1;
+      Constructor<T> objectConstructor = clazz.getConstructor();
+      objectConstructor.setAccessible(true);
 
       List<T> rows = Lists.newLinkedList();
-
       for (int rowOffset = 0; rowOffset < rowCount; rowOffset++) {
-        Constructor<T> constructor = clazz.getConstructor();
-        T parsedObj = constructor.newInstance();
+        T parsedObj = objectConstructor.newInstance();
 
-        for (Integer columnIdx : columnPositions) {
+        for (Integer columnIdx : positionToField.keySet()) {
           HSSFCell cell = sheet.getRow(rowStart + rowOffset - 1).getCell(columnIdx);
-
-          Field field = colIdxToField.get(columnIdx);
-          field.setAccessible(true);
-
-          if (cell == null) {
-            field.set(parsedObj, null);
-          } else {
-            field.set(parsedObj, CellConverters.getConverter(field.getType()).convert(cell));
-          }
+          Field targetField = positionToField.get(columnIdx);
+          Object parsed = convertCell(cell, targetField.getType());
+          targetField.setAccessible(true);
+          targetField.set(parsedObj, parsed);
         }
 
         rows.add(parsedObj);
       }
-
       return rows;
+    } catch (NoSuchMethodException e) {
+      throw new RuntimeException(
+          String.format("Class %s must have a public non-args constructor",
+          clazz.getName()));
     } catch (Exception e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  private Object convertCell(HSSFCell cell, Class<?> conversionType) {
+    if (cell == null) {
+      return null;
+    } else {
+      return CellConverters.getConverter(conversionType).convert(cell);
     }
   }
 
