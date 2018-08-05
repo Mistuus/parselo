@@ -70,7 +70,8 @@ public class Parselo {
   }
 
   /**
-   * Parse an array defined by the spec from the given sheet.
+   * Parse an array defined by the spec from the given sheet. Empty/Null cells will be mapped to the default value
+   * specified in {@link CellConverter#getDefault()}.
    *
    * @param sheetName the sheet name
    * @param cellConverter the function to convert a cell to an object of type T
@@ -94,7 +95,8 @@ public class Parselo {
   }
 
   /**
-   * Parse a matrix described by the specification from the given sheet name.
+   * Parse a matrix described by the specification from the given sheet name. Empty/Null cells will be mapped to the
+   * default value specified in {@link CellConverter#getDefault()}.
    *
    * @param sheetName the sheet name to parse
    * @param cellConverter the function to convert a cell to an object of type T
@@ -149,7 +151,7 @@ public class Parselo {
     for (int rowOffset = 0; rowOffset < spec.rows(); rowOffset++) {
       for (int colOffset = 0; colOffset < spec.columns(); colOffset++) {
         HSSFCell cell = sheet.getRow(rowStart + rowOffset).getCell(columnStart + colOffset);
-        array.add(cellConverter.convert(cell));
+        array.add(cellConverter.convertWithDefault(cell));
       }
     }
 
@@ -161,7 +163,7 @@ public class Parselo {
     final int columnStart = spec.getColumnStartIndex();
 
     BiFunction<Integer, Integer, T> valueFunction =
-        (rowOffset, columnOffset) -> cellConverter.convert(
+        (rowOffset, columnOffset) -> cellConverter.convertWithDefault(
             sheet.getRow(rowStart + rowOffset)
                 .getCell(columnStart + columnOffset));
 

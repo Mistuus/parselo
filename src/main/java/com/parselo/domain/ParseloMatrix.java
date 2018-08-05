@@ -28,24 +28,24 @@ import org.joda.beans.impl.direct.MinimalMetaBean;
 public final class ParseloMatrix<T> implements ImmutableBean {
 
   @PropertyDefinition(validate = "notNull")
-  private final ImmutableList<ImmutableList<T>> rows;
+  private final List<List<T>> rows;
 
   public static <T> ParseloMatrix<T> of(int rows, int columns, BiFunction<Integer, Integer, T> valueProvider) {
-    LinkedList<ImmutableList<T>> rowList = Lists.newLinkedList();
+    List<List<T>> rowList = Lists.newLinkedList();
 
     for (int row = 0; row < rows; row++) {
-      ImmutableList.Builder<T> columnList = ImmutableList.builder();
+      List<T> columnList = Lists.newLinkedList();
       for (int col = 0; col < columns; col++) {
         columnList.add(valueProvider.apply(row, col));
       }
-      rowList.add(columnList.build());
+      rowList.add(columnList);
     }
 
     return new ParseloMatrix<>(rowList);
   }
 
   //---------------------------------------------------------------
-  public ImmutableList<T> getRow(int row) {
+  public List<T> getRow(int row) {
     validateRow(row);
     return rows.get(row);
   }
@@ -120,7 +120,7 @@ public final class ParseloMatrix<T> implements ImmutableBean {
   }
 
   private ParseloMatrix(
-      List<ImmutableList<T>> rows) {
+      List<List<T>> rows) {
     JodaBeanUtils.notNull(rows, "rows");
     this.rows = ImmutableList.copyOf(rows);
   }
@@ -136,7 +136,7 @@ public final class ParseloMatrix<T> implements ImmutableBean {
    * Gets the rows.
    * @return the value of the property, not null
    */
-  public ImmutableList<ImmutableList<T>> getRows() {
+  public List<List<T>> getRows() {
     return rows;
   }
 
@@ -184,7 +184,7 @@ public final class ParseloMatrix<T> implements ImmutableBean {
    */
   static final class Builder<T> extends DirectFieldsBeanBuilder<ParseloMatrix<T>> {
 
-    private List<ImmutableList<T>> rows = ImmutableList.of();
+    private List<List<T>> rows = ImmutableList.of();
 
     /**
      * Restricted constructor.
@@ -197,7 +197,7 @@ public final class ParseloMatrix<T> implements ImmutableBean {
      * @param beanToCopy  the bean to copy from, not null
      */
     private Builder(ParseloMatrix<T> beanToCopy) {
-      this.rows = beanToCopy.getRows();
+      this.rows = ImmutableList.copyOf(beanToCopy.getRows());
     }
 
     //-----------------------------------------------------------------------
@@ -216,7 +216,7 @@ public final class ParseloMatrix<T> implements ImmutableBean {
     public Builder<T> set(String propertyName, Object newValue) {
       switch (propertyName.hashCode()) {
         case 3506649:  // rows
-          this.rows = (List<ImmutableList<T>>) newValue;
+          this.rows = (List<List<T>>) newValue;
           break;
         default:
           throw new NoSuchElementException("Unknown property: " + propertyName);
@@ -242,7 +242,7 @@ public final class ParseloMatrix<T> implements ImmutableBean {
      * @param rows  the new value, not null
      * @return this, for chaining, not null
      */
-    public Builder<T> rows(List<ImmutableList<T>> rows) {
+    public Builder<T> rows(List<List<T>> rows) {
       JodaBeanUtils.notNull(rows, "rows");
       this.rows = rows;
       return this;
@@ -255,7 +255,7 @@ public final class ParseloMatrix<T> implements ImmutableBean {
      * @return this, for chaining, not null
      */
     @SafeVarargs
-    public final Builder<T> rows(ImmutableList<T>... rows) {
+    public final Builder<T> rows(List<T>... rows) {
       return rows(ImmutableList.copyOf(rows));
     }
 

@@ -29,11 +29,6 @@ import org.joda.beans.impl.direct.DirectMetaPropertyMap;
 public final class ParseloSpec implements ImmutableBean {
 
   /**
-   * The excel column name regex to check column names against.
-   */
-  private static final Pattern IS_EXCEL_COLUMN =Pattern.compile("[a-zA-Z]*");
-
-  /**
    * The start row (zero-based) index.
    */
   @PropertyDefinition
@@ -63,20 +58,6 @@ public final class ParseloSpec implements ImmutableBean {
   private static void isValidRowNumber(int value, String propertyName) {
     if (value < 0) {
       throw new IllegalArgumentException(propertyName + " expected to be a positive number but was '" + value + "'");
-    }
-  }
-
-  /**
-   * Check whether the value represents a valid excel column. Eg: 'A', 'F', 'aD', 'Zsd', 'zzz'
-   *
-   * @param value the value to check
-   * @param propertyName the property name that this value represents
-   */
-  private static void isExcelColumn(String value, String propertyName) {
-    JodaBeanUtils.notBlank(value, propertyName);
-    if (!IS_EXCEL_COLUMN.matcher(value).matches()) {
-      throw new IllegalArgumentException(propertyName + " expected to be a valid column name (e.g. 'A', 'bb', 'ZAA') " +
-          "but was '" + value + "'");
     }
   }
 
@@ -139,8 +120,8 @@ public final class ParseloSpec implements ImmutableBean {
   private void validate() {
     isValidRowNumber(rowStart, "rowStart");
     isValidRowNumber(rowEnd, "rowEnd");
-    isExcelColumn(columnStart, "columnStart");
-    isExcelColumn(columnEnd, "columnEnd");
+    ExcelUtils.isExcelColumn(columnStart, "columnStart");
+    ExcelUtils.isExcelColumn(columnEnd, "columnEnd");
     if (rowStart > rowEnd) {
       throw new IllegalArgumentException(String.format(
           "rowStart[%d] cannot be after rowEnd[%d]",

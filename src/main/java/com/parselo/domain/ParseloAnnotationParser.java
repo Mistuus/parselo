@@ -50,7 +50,12 @@ class ParseloAnnotationParser {
 
           Field field = colIdxToField.get(columnIdx);
           field.setAccessible(true);
-          field.set(parsedObj, ExcelUtils.extractValue(cell, field));
+
+          if (cell == null) {
+            field.set(parsedObj, null);
+          } else {
+            field.set(parsedObj, CellConverters.getConverter(field.getType()).convert(cell));
+          }
         }
 
         rows.add(parsedObj);
@@ -70,7 +75,6 @@ class ParseloAnnotationParser {
 
       if (columnAnnotation != null) {
         int cellIndex = ExcelUtils.columnIndex(columnAnnotation.name());
-        // TODO: what if we have duplicate cell indexes? Do we error or override?
         positionToField.put(cellIndex, field);
       }
     }

@@ -1,24 +1,33 @@
 package com.parselo.domain;
 
-import java.lang.reflect.Field;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
-import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.ss.usermodel.DataFormatter;
-import org.apache.poi.ss.usermodel.DateUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.joda.beans.JodaBeanUtils;
 
 /**
  * Utilities class for dealing with different excel specific challenges.
  */
 class ExcelUtils {
 
-  private static final Logger logger = LoggerFactory.getLogger(ExcelUtils.class);
-  private static final DataFormatter DATA_FORMATTER = new DataFormatter();
+  /**
+   * The excel column name regex to check column names against.
+   */
+  private static final Pattern IS_EXCEL_COLUMN =Pattern.compile("[a-zA-Z]*");
+
+  /**
+   * Check whether the value represents a valid excel column. Eg: 'A', 'F', 'aD', 'Zsd', 'zzz'
+   *
+   * @param value the value to check
+   * @param propertyName the property name that this value represents
+   */
+  static void isExcelColumn(String value, String propertyName) {
+    JodaBeanUtils.notBlank(value, propertyName);
+    if (!IS_EXCEL_COLUMN.matcher(value).matches()) {
+      throw new IllegalArgumentException(propertyName + " expected to be a valid column name (e.g. 'A', 'bb', 'ZAA') " +
+          "but was '" + value + "'");
+    }
+  }
 
   /**
    * Convert a case insensitive column name (like 'A', 'bb', 'cdA', 'CzA' etc) to the zero-based index of that column.
@@ -44,57 +53,4 @@ class ExcelUtils {
     return position - 1;
   }
 
-  /**
-   * Extract the object with the same type as the fieldToPopulate from the given cell. The method will return the
-   * default value 'null' when a null cell is provided to the method.
-   *
-   * @param cell the cell to extract the data out from
-   * @param fieldToPopulate the field we want to assign the extracted object to
-   * @return the object extracted from the cell having the same type as the type of the fieldToPopulate
-   * @throws IllegalArgumentException if a type is not supported or a cell cannot be converted to the required type.
-   */
-  static Object extractValue(HSSFCell cell, Field fieldToPopulate) {
-    if (cell == null) {
-      logger.debug("Cell to parse is null. Using default value 'null'");
-      return null;
-    }
-
-    Class<?> cellType = fieldToPopulate.getType();
-
-    if (String.class.equals(cellType)) {
-      return DATA_FORMATTER.formatCellValue(cell);
-    }
-
-    if (Integer.class.equals(cellType)) {
-      return (int) cell.getNumericCellValue();
-    }
-
-    if (Double.class.equals(cellType)) {
-      return cell.getNumericCellValue();
-    }
-
-    if (LocalDate.class.equals(cellType)) {
-      if (DateUtil.isCellDateFormatted(cell)) {
-        Date input = DateUtil.getJavaDate(cell.getNumericCellValue());
-        return input.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-      } else {
-        throw new IllegalArgumentException(String.format(
-            "%s does not contain a valid Excel Date. Found value: '%s'",
-            toDescription(cell),
-            DATA_FORMATTER.formatCellValue(cell)));
-      }
-    }
-
-    throw new IllegalArgumentException(String.format(
-        "Parselo does not support conversion to type '%s' for field name '%s'.",
-        cellType.getName(),
-        fieldToPopulate.getName()));
-  }
-
-  private static String toDescription(HSSFCell cell) {
-    return "Cell: {" +
-        "row: " + cell.getRowIndex() + ", " +
-        "column: " + cell.getColumnIndex() +
-        "}";
-  }
 }
