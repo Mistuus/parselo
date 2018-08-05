@@ -36,7 +36,7 @@ class ParseloTest {
         .columnStart("B")
         .columnEnd("E")
         .build();
-    List<String> parsed = parselo.parseStringArray("String Array", spec);
+    List<String> parsed = parselo.parseArray("String Array", CellConverters.TO_STRING, spec);
 
     assertThat(parsed).hasSize(4);
     assertThat(parsed).containsExactly("a", "b", "c", "d");
@@ -51,7 +51,7 @@ class ParseloTest {
         .columnEnd("B")
         .build();
 
-    List<String> parsed = parselo.parseStringArray("String Array", spec);
+    List<String> parsed = parselo.parseArray("String Array", CellConverters.TO_STRING, spec);
     assertThat(parsed).hasSize(4);
     assertThat(parsed).containsExactly("e", "f", "g", "h");
   }
@@ -65,7 +65,7 @@ class ParseloTest {
         .columnEnd("E")
         .build();
 
-    ParseloMatrix<String> parsed = parselo.parseStringMatrix("String Matrix", spec);
+    ParseloMatrix<String> parsed = parselo.parseMatrix("String Matrix", CellConverters.TO_STRING, spec);
 
     assertThat(parsed).isNotNull();
     assertThat(parsed.rowCount()).isEqualTo(3);
@@ -84,7 +84,7 @@ class ParseloTest {
         .columnEnd("E")
         .build();
 
-    ParseloMatrix<String> parsed = parselo.parseStringMatrix("String Matrix", spec);
+    ParseloMatrix<String> parsed = parselo.parseMatrix("String Matrix", CellConverters.TO_STRING, spec);
 
     assertThat(parsed).isNotNull();
     assertThat(parsed.rowCount()).isEqualTo(2);

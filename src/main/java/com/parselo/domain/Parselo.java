@@ -12,8 +12,8 @@ import java.util.stream.StreamSupport;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.joda.beans.JodaBeanUtils;
 
 import com.google.common.collect.Lists;
 import com.google.common.io.Resources;
@@ -23,7 +23,6 @@ import com.google.common.io.Resources;
  */
 public class Parselo {
 
-  private static final DataFormatter FORMATTER = new DataFormatter();
   private static final ParseloAnnotationParser ANNOTATION_PARSER = new ParseloAnnotationParser();
 
   private final HSSFWorkbook workbook;
@@ -70,21 +69,22 @@ public class Parselo {
   }
 
   /**
-   * Parse a string array defined by the spec from the given sheet.
+   * Parse an array defined by the spec from the given sheet.
    *
    * @param sheetName the sheet name
+   * @param cellConverter the function to convert a cell to an object of type T
    * @param spec the specification for the array area
-   * @return the array of strings
+   * @param <T> the type of the elements in the list
+   * @return the list of elements
    * @throws IllegalArgumentException if the sheet name doesn't exist or the spec does not define an array area
    */
-  public List<String> parseStringArray(String sheetName, ParseloSpec spec) {
+  public <T> List<T> parseArray(String sheetName, CellConverter<T> cellConverter, ParseloSpec spec) {
+    JodaBeanUtils.notNull(spec, "spec");
+    JodaBeanUtils.notNull(cellConverter, "cellConverter");
     HSSFSheet sheet = getSheet(sheetName);
-    if (spec == null) {
-      throw new IllegalArgumentException("Spec cannot be null.");
-    }
 
     if (spec.isHorizontalArray() || spec.isVerticalArray()) {
-      return parseArray(sheet, spec);
+      return parseArray(sheet, spec, cellConverter);
     } else {
       throw new IllegalArgumentException(String.format(
           "Spec does not define an array. Either the start & end row must be the same or the " +
@@ -93,29 +93,24 @@ public class Parselo {
   }
 
   /**
-   * Parse a string matrix described by the specification from the given sheet name. The matrix will parse empty/null
-   * cells as empty strings.
+   * Parse a matrix described by the specification from the given sheet name.
    *
    * @param sheetName the sheet name to parse
+   * @param cellConverter the function to convert a cell to an object of type T
    * @param spec the matrix specification
-   * @return the string matrix
+   * @param <T> the type of the elements in the matrix
+   * @return the matrix
    * @throws IllegalArgumentException if the sheet is null or the spec is null
    */
-  public ParseloMatrix<String> parseStringMatrix(String sheetName, ParseloSpec spec) {
+  public <T> ParseloMatrix<T> parseMatrix(
+      String sheetName,
+      CellConverter<T> cellConverter,
+      ParseloSpec spec) {
+
+    JodaBeanUtils.notNull(spec, "spec");
+    JodaBeanUtils.notNull(cellConverter, "cellConverter");
     HSSFSheet sheet = getSheet(sheetName);
-    if (spec == null) {
-      throw new IllegalArgumentException("Spec cannot be null.");
-    }
-
-    final int rowStart = spec.getRowStart();
-    final int columnStart = spec.getColumnStartIndex();
-
-    BiFunction<Integer, Integer, String> valueFunction =
-        (rowOffset, columnOffset) -> FORMATTER.formatCellValue(sheet
-                .getRow(rowStart + rowOffset)
-                .getCell(columnStart + columnOffset));
-
-    return ParseloMatrix.of(spec.rows(), spec.columns(), valueFunction);
+    return parseMatrix(sheet, spec, cellConverter);
   }
 
   /**
@@ -145,19 +140,30 @@ public class Parselo {
     return sheet;
   }
 
-  private List<String> parseArray(HSSFSheet sheet, ParseloSpec spec) {
-    List<String> array = Lists.newLinkedList();
+  private <T> List<T> parseArray(HSSFSheet sheet, ParseloSpec spec, CellConverter<T> cellConverter) {
+    List<T> array = Lists.newLinkedList();
     int rowStart = spec.getRowStart();
     int columnStart = spec.getColumnStartIndex();
 
     for (int rowOffset = 0; rowOffset < spec.rows(); rowOffset++) {
       for (int colOffset = 0; colOffset < spec.columns(); colOffset++) {
         HSSFCell cell = sheet.getRow(rowStart + rowOffset).getCell(columnStart + colOffset);
-        array.add(FORMATTER.formatCellValue(cell));
+        array.add(cellConverter.convert(cell));
       }
     }
 
     return array;
   }
 
+  private <T> ParseloMatrix<T> parseMatrix(HSSFSheet sheet, ParseloSpec spec, CellConverter<T> cellConverter) {
+    final int rowStart = spec.getRowStart();
+    final int columnStart = spec.getColumnStartIndex();
+
+    BiFunction<Integer, Integer, T> valueFunction =
+        (rowOffset, columnOffset) -> cellConverter.convert(
+            sheet.getRow(rowStart + rowOffset)
+                .getCell(columnStart + columnOffset));
+
+    return ParseloMatrix.of(spec.rows(), spec.columns(), valueFunction);
+  }
 }
