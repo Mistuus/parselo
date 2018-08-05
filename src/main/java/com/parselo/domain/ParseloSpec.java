@@ -8,6 +8,7 @@ import org.joda.beans.gen.PropertyDefinition;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.regex.Pattern;
 
 import org.joda.beans.Bean;
 import org.joda.beans.JodaBeanUtils;
@@ -26,6 +27,11 @@ import org.joda.beans.impl.direct.DirectMetaPropertyMap;
  */
 @BeanDefinition
 public final class ParseloSpec implements ImmutableBean {
+
+  /**
+   * The excel column name regex to check column names against.
+   */
+  private static final Pattern IS_EXCEL_COLUMN =Pattern.compile("[a-zA-Z]*");
 
   /**
    * The start row (zero-based) index.
@@ -47,6 +53,32 @@ public final class ParseloSpec implements ImmutableBean {
    */
   @PropertyDefinition(validate = "notBlank", get = "private")
   private final String columnEnd;
+
+  /**
+   * Check whether number is a positive integer.
+   *
+   * @param value the value to check
+   * @param propertyName the name of the property the value represents
+   */
+  private static void isValidRowNumber(int value, String propertyName) {
+    if (value < 0) {
+      throw new IllegalArgumentException(propertyName + " expected to be a positive number but was '" + value + "'");
+    }
+  }
+
+  /**
+   * Check whether the value represents a valid excel column. Eg: 'A', 'F', 'aD', 'Zsd', 'zzz'
+   *
+   * @param value the value to check
+   * @param propertyName the property name that this value represents
+   */
+  private static void isExcelColumn(String value, String propertyName) {
+    JodaBeanUtils.notBlank(value, propertyName);
+    if (!IS_EXCEL_COLUMN.matcher(value).matches()) {
+      throw new IllegalArgumentException(propertyName + " expected to be a valid column name (e.g. 'A', 'bb', 'ZAA') " +
+          "but was '" + value + "'");
+    }
+  }
 
   /**
    * Check whether the specification represents an horizontal array, i.e. only one row.
@@ -105,10 +137,10 @@ public final class ParseloSpec implements ImmutableBean {
   //------------------------------------------------------------------
   @ImmutableValidator
   private void validate() {
-    SpecValidator.isValidRowNumber(rowStart, "rowStart");
-    SpecValidator.isValidRowNumber(rowEnd, "rowEnd");
-    SpecValidator.isExcelColumn(columnStart, "columnStart");
-    SpecValidator.isExcelColumn(columnEnd, "columnEnd");
+    isValidRowNumber(rowStart, "rowStart");
+    isValidRowNumber(rowEnd, "rowEnd");
+    isExcelColumn(columnStart, "columnStart");
+    isExcelColumn(columnEnd, "columnEnd");
     if (rowStart > rowEnd) {
       throw new IllegalArgumentException(String.format(
           "rowStart[%d] cannot be after rowEnd[%d]",
