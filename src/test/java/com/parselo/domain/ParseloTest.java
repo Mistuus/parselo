@@ -1,9 +1,11 @@
 package com.parselo.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.List;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -17,33 +19,33 @@ class ParseloTest {
   }
 
   @Test
-  void createFromFilename() {
+  void parselo_fromFilename_isNotNullObject() {
     assertThat(parselo).isNotNull();
   }
 
   @Test
-  void getAllSheetNames() {
+  void getAllSheetNames_returnsSheetNames() {
     List<String> sheetNames = parselo.getSheetNames();
     assertThat(sheetNames).hasSize(2);
     assertThat(sheetNames).containsExactly("String Array", "String Matrix");
   }
 
   @Test
-  void parseHorizontalStringArray() {
+  void parse_horizontalStringList_returnsArray() {
     ParseloSpec spec = ParseloSpec.builder()
         .rowStart(1)
         .rowEnd(1)
         .columnStart("B")
         .columnEnd("E")
         .build();
-    List<String> parsed = parselo.parseArray("String Array", CellConverters.TO_STRING, spec);
+    List<String> parsed = parselo.parseList("String Array", CellConverters.TO_STRING, spec);
 
     assertThat(parsed).hasSize(4);
     assertThat(parsed).containsExactly("a", "b", "c", "d");
   }
 
   @Test
-  void parseVerticalStringArray() {
+  void parse_verticalStringList_returnList() {
     ParseloSpec spec = ParseloSpec.builder()
         .rowStart(5)
         .rowEnd(8)
@@ -51,13 +53,13 @@ class ParseloTest {
         .columnEnd("B")
         .build();
 
-    List<String> parsed = parselo.parseArray("String Array", CellConverters.TO_STRING, spec);
+    List<String> parsed = parselo.parseList("String Array", CellConverters.TO_STRING, spec);
     assertThat(parsed).hasSize(4);
     assertThat(parsed).containsExactly("e", "f", "g", "h");
   }
 
   @Test
-  void parseStringMatrix() {
+  void parse_stringMatrix_returnsMatrix() {
     ParseloSpec spec = ParseloSpec.builder()
         .rowStart(1)
         .rowEnd(3)
@@ -76,7 +78,7 @@ class ParseloTest {
   }
 
   @Test
-  void parseMatrixWithEmptyFields() {
+  void parse_matrixWithEmptyFields_returnsFieldsWithEmptyStrings() {
     ParseloSpec spec = ParseloSpec.builder()
         .rowStart(7)
         .rowEnd(8)

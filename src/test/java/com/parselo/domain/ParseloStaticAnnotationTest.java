@@ -22,7 +22,7 @@ class ParseloStaticAnnotationTest {
 
 
   @Test
-  void parseCars() {
+  void parse_withAnnotatedCar_returnsListOfCars() {
     List<Car> parsedCars = parselo.parse("Cars", Car.class);
 
     assertThat(parsedCars).hasSize(3);
@@ -35,7 +35,7 @@ class ParseloStaticAnnotationTest {
   }
 
   @Test
-  void parsePhonesWithEmptyValues() {
+  void parse_withAnnotatedPhone_returnsListOfPhonesWithNullValues() {
     List<Phone> phones = parselo.parse("Phones", Phone.class);
 
     assertThat(phones).hasSize(3);

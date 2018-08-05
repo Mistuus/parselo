@@ -80,13 +80,13 @@ public class Parselo {
    * @return the list of elements
    * @throws IllegalArgumentException if the sheet name doesn't exist or the spec does not define an array area
    */
-  public <T> List<T> parseArray(String sheetName, CellConverter<T> cellConverter, ParseloSpec spec) {
+  public <T> List<T> parseList(String sheetName, CellConverter<T> cellConverter, ParseloSpec spec) {
     JodaBeanUtils.notNull(spec, "spec");
     JodaBeanUtils.notNull(cellConverter, "cellConverter");
     HSSFSheet sheet = getSheet(sheetName);
 
     if (spec.isHorizontalArray() || spec.isVerticalArray()) {
-      return parseArray(sheet, spec, cellConverter);
+      return parseList(sheet, spec, cellConverter);
     } else {
       throw new IllegalArgumentException(String.format(
           "Spec does not define an array. Either the start & end row must be the same or the " +
@@ -131,6 +131,10 @@ public class Parselo {
     return annotationParser.parse(sheet, clazz);
   }
 
+  public <T> List<T> parse(String sheetName, Class<T> clazz, ParseloSpec spec) {
+    return null;
+  }
+
   //--------------------------------------------------------------------
   private HSSFSheet getSheet(String sheetName) {
     if (sheetName == null) {
@@ -143,7 +147,7 @@ public class Parselo {
     return sheet;
   }
 
-  private <T> List<T> parseArray(HSSFSheet sheet, ParseloSpec spec, CellConverter<T> cellConverter) {
+  private <T> List<T> parseList(HSSFSheet sheet, ParseloSpec spec, CellConverter<T> cellConverter) {
     List<T> array = Lists.newLinkedList();
     int rowStart = spec.getRowStart();
     int columnStart = spec.getColumnStartIndex();
