@@ -23,12 +23,13 @@ import com.google.common.io.Resources;
  */
 public class Parselo {
 
-  private static final ParseloAnnotationParser ANNOTATION_PARSER = new ParseloAnnotationParser();
+  private final ParseloAnnotationParser annotationParser;
 
   private final HSSFWorkbook workbook;
 
-  private Parselo(HSSFWorkbook workbook) {
+  private Parselo(HSSFWorkbook workbook, ParseloAnnotationParser annotationParser) {
     this.workbook = workbook;
+    this.annotationParser = annotationParser;
   }
 
   /**
@@ -38,7 +39,7 @@ public class Parselo {
    * @return a new instance of parselo
    */
   public static Parselo of(HSSFWorkbook workbook) {
-    return new Parselo(workbook);
+    return new Parselo(workbook, new ParseloAnnotationParser());
   }
 
   /**
@@ -125,7 +126,7 @@ public class Parselo {
    */
   public <T> List<T> parse(String sheetName, Class<T> clazz) {
     HSSFSheet sheet = getSheet(sheetName);
-    return ANNOTATION_PARSER.parse(sheet, clazz);
+    return annotationParser.parse(sheet, clazz);
   }
 
   //--------------------------------------------------------------------
