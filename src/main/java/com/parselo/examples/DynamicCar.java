@@ -7,10 +7,10 @@ import com.parselo.annotations.ParseloPosition;
 public class DynamicCar {
 
   @ParseloPosition(position = 0)
-  private String model;
+  private String producer;
 
   @ParseloPosition(position = 1)
-  private String producer;
+  private String type;
 
   @ParseloPosition(position = 2)
   private Integer year;
@@ -22,8 +22,8 @@ public class DynamicCar {
   public DynamicCar() {
   }
 
-  public String getModel() {
-    return model;
+  public String getType() {
+    return type;
   }
 
   public String getProducer() {

@@ -9,9 +9,9 @@ public class Main {
   public static void main(String[] args) {
     //// ANNOTATION PARSING
     //// static parsing
-    //List<Car> staticCars = Parselo.STANDARD.parse(sheet, Car.class);
+    //List<Car> staticCars = Parselo.STANDARD.parseDynamic(sheet, Car.class);
     //// dynamic parsing
-    //List<Car> dynamicCars2 = Parselo.STANDARD.parse(sheet, Car.class, rowStart, rowEnd, cellStart, cellEnd);
+    //List<Car> dynamicCars2 = Parselo.STANDARD.parseDynamic(sheet, Car.class, rowStart, rowEnd, cellStart, cellEnd);
     //  // OR...
     //ParseloSpec spec = Parselo.SPEC.builder()
     //    .rowStart(0)
@@ -19,7 +19,7 @@ public class Main {
     //    .cellStart("A")
     //    .cellEnd("Z")
     //    .build();
-    //List<Car> dynamicCarsWithSpec = Parselo.STANDARD.parse(sheet, Car.class, spec);
+    //List<Car> dynamicCarsWithSpec = Parselo.STANDARD.parseDynamic(sheet, Car.class, spec);
     //
     //// LIST PARSING
     //List<String> strings = Parselo.STANDARD.parseStrings(sheet, rowStart, rowEnd, cellStart, cellEnd);

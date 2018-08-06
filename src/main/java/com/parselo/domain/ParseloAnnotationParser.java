@@ -1,17 +1,24 @@
 package com.parselo.domain;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.text.ParsePosition;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.parselo.annotations.ParseloRow;
+import com.parselo.annotations.Parselo;
 import com.parselo.annotations.ParseloColumn;
+import com.parselo.annotations.ParseloPosition;
+import com.parselo.annotations.ParseloRow;
+import com.parselo.exception.InvalidConfigurationException;
 
 /**
  * Class for extracting Parselo annotated objects from a given sheet.
@@ -21,38 +28,73 @@ class ParseloAnnotationParser {
   /**
    * Parse a given sheet for a list of objects of the provided type.
    *
-   * @param sheet the sheet to parse
+   * @param sheet the sheet to parseStatic
    * @param clazz the class of type T
    * @param <T> the type of the resulting parsed objects
    * @return the list of parsed objects of type T from the sheet
-   * @throws IllegalArgumentException if no ParseloRow annotation is found or a particular field type cannot be parsed
-   * from the sheet
+   * @throws IllegalArgumentException if no ParseloRow/ParseloColumn annotations are found or a particular field type
+   * cannot be parsed from the sheet
    */
-  <T> List<T> parse(HSSFSheet sheet, Class<T> clazz) {
-    ParseloRow annotation = extractAnnotation(clazz);
-    Map<Integer, Field> colIdxToField = extractFieldPositions(clazz);
-    return parseRows(sheet, annotation, colIdxToField, clazz);
+  <T> List<T> parseStatic(HSSFSheet sheet, Class<T> clazz) {
+    try {
+      ParseloRow rowAnnotation = extractClassAnnotation(clazz, ParseloRow.class);
+      List<Field> fields = extractSortedColumnAnnotatedFields(clazz);
+      ParseloSpec spec = createSpec(rowAnnotation, extractColumnAnnotations(fields));
+      return parseRows(sheet, spec, fields, clazz.getConstructor());
+    } catch (NoSuchMethodException e) {
+      throw new RuntimeException(
+          String.format(
+              "Class %s must have a public non-args constructor",
+              clazz.getName()));
+    }
   }
 
+  /**
+   * Parse a given sheet for a list of objects of the provided type. The area parsed will be driven by
+   * the specification provided.
+   *
+   * @param sheet the sheet to parseStatic
+   * @param clazz the class of type T
+   * @param <T> the type of the resulting parsed objects
+   * @return the list of parsed objects of type T from the sheet
+   * @throws IllegalArgumentException if no ParseloRow/ParseloColumn annotations are found or a particular field type
+   * cannot be parsed from the sheet
+   */
+  <T> List<T> parseDynamic(HSSFSheet sheet, Class<T> clazz, ParseloSpec spec) {
+    try {
+      validateClassIsAnnotated(clazz, Parselo.class);
+      List<Field> fields = extractSortedPositionAnnotatedFields(clazz);
+      return parseRows(sheet, spec, fields, clazz.getConstructor());
+    } catch (NoSuchMethodException e) {
+      throw new RuntimeException(
+          String.format(
+              "Class %s must have a public non-args constructor",
+              clazz.getName()));
+    }
+  }
+
+  // The fields must be sorted in ascending order of their annotations's parameters (so by column name for
+  // ParseloColumns or by position for the ParseloPosition)
   private <T> List<T> parseRows(
       HSSFSheet sheet,
-      ParseloRow annotation,
-      Map<Integer, Field> positionToField,
-      Class<T> clazz) {
+      ParseloSpec spec,
+      List<Field> fields,
+      Constructor<T> clazzConstructor) {
 
     try {
-      int rowStart = annotation.start();
-      int rowCount = annotation.end() - rowStart + 1;
-      Constructor<T> objectConstructor = clazz.getConstructor();
-      objectConstructor.setAccessible(true);
+      int rowStart = spec.getRowStart() - 1;
+      int rowCount = spec.rows();
+      int columnStart = spec.getColumnStartIndex() - 1;
+      int columnCount = spec.columns();
+      clazzConstructor.setAccessible(true);
 
       List<T> rows = Lists.newLinkedList();
       for (int rowOffset = 0; rowOffset < rowCount; rowOffset++) {
-        T parsedObj = objectConstructor.newInstance();
+        T parsedObj = clazzConstructor.newInstance();
 
-        for (Integer columnIdx : positionToField.keySet()) {
-          HSSFCell cell = sheet.getRow(rowStart + rowOffset - 1).getCell(columnIdx);
-          Field targetField = positionToField.get(columnIdx);
+        for (int columnOffset = 0; columnOffset < columnCount; columnOffset++) {
+          HSSFCell cell = sheet.getRow(rowStart + rowOffset).getCell(columnStart + columnOffset);
+          Field targetField = fields.get(columnOffset);
           Object parsed = convertCell(cell, targetField.getType());
           targetField.setAccessible(true);
           targetField.set(parsedObj, parsed);
@@ -61,10 +103,6 @@ class ParseloAnnotationParser {
         rows.add(parsedObj);
       }
       return rows;
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException(
-          String.format("Class %s must have a public non-args constructor",
-          clazz.getName()));
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -78,29 +116,73 @@ class ParseloAnnotationParser {
     }
   }
 
-  private <T> Map<Integer, Field> extractFieldPositions(Class<T> clazz) {
-    Map<Integer, Field> positionToField = Maps.newHashMap();
+  private List<Field> extractSortedPositionAnnotatedFields(Class<?> clazz) {
+    ImmutableList<Field> fields = Arrays.stream(clazz.getDeclaredFields())
+        .filter(field -> field.getAnnotation(ParseloPosition.class) != null)
+        .sorted(Comparator.comparing(field -> field.getAnnotation(ParseloPosition.class).position()))
+        .collect(ImmutableList.toImmutableList());
 
-    for (Field field : clazz.getDeclaredFields()) {
-      ParseloColumn columnAnnotation = field.getAnnotation(ParseloColumn.class);
-
-      if (columnAnnotation != null) {
-        int cellIndex = ExcelUtils.columnIndex(columnAnnotation.name());
-        positionToField.put(cellIndex, field);
-      }
+    if (fields.isEmpty()) {
+      throw new InvalidConfigurationException(String.format(
+          "Class %s has no fields annotated with %s.",
+          clazz.getName(),
+          ParsePosition.class));
     }
 
-    return positionToField;
+    return fields;
   }
 
-  private <T> ParseloRow extractAnnotation(Class<T> clazz) {
-    ParseloRow annotation = clazz.getAnnotation(ParseloRow.class);
-    if (annotation == null) {
-      throw new IllegalArgumentException(String.format(
-          "Class %s needs to be annotated with %s",
-          clazz.getCanonicalName(),
-          ParseloRow.class.getName()));
+  private ParseloSpec createSpec(ParseloRow rowAnnotation, List<ParseloColumn> columnAnnotations) {
+    ImmutableList<String> columnNames = columnAnnotations.stream()
+        .map(ParseloColumn::name)
+        .sorted()
+        .collect(ImmutableList.toImmutableList());
+
+    return ParseloSpec.builder()
+        .rowStart(rowAnnotation.start())
+        .rowEnd(rowAnnotation.end())
+        .columnStart(columnNames.get(0))
+        .columnEnd(columnNames.get(columnNames.size() - 1))
+        .build();
+  }
+
+  private ImmutableList<ParseloColumn> extractColumnAnnotations(List<Field> fields) {
+    return fields.stream()
+        .map(field -> field.getAnnotation(ParseloColumn.class))
+        .collect(ImmutableList.toImmutableList());
+  }
+
+  private List<Field> extractSortedColumnAnnotatedFields(Class<?> clazz) {
+    ImmutableList<Field> fields = Arrays.stream(clazz.getDeclaredFields())
+        .filter(field -> field.getAnnotation(ParseloColumn.class) != null)
+        .sorted(Comparator.comparing(field -> field.getAnnotation(ParseloColumn.class).name()))
+        .collect(ImmutableList.toImmutableList());
+
+    if (fields.isEmpty()) {
+      throw new InvalidConfigurationException(String.format(
+          "Class %s has no fields annotated with %s.",
+          clazz.getName(),
+          ParseloColumn.class));
     }
-    return annotation;
+
+    return fields;
+  }
+
+  private <T extends Annotation> void validateClassIsAnnotated(Class<?> clazz, Class<T> annotationClass) {
+    if (clazz.getAnnotation(annotationClass) == null) {
+      throw new InvalidConfigurationException(String.format(
+          "Expecting class %s to be annotated with %s",
+          clazz.getName(),
+          annotationClass.getName()));
+    }
+  }
+
+  private <T extends Annotation> T extractClassAnnotation(Class<?> clazz, Class<T> annotationClass) {
+    return Optional.ofNullable(clazz.getAnnotation(annotationClass))
+        .orElseThrow(() ->
+            new IllegalArgumentException(String.format(
+                "Class %s needs to be annotated with %s",
+                clazz.getCanonicalName(),
+                annotationClass.getName())));
   }
 }

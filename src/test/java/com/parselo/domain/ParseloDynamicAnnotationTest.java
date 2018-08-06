@@ -2,7 +2,6 @@ package com.parselo.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
@@ -33,8 +32,8 @@ public class ParseloDynamicAnnotationTest {
     assertThat(cars).hasSize(3);
 
     DynamicCar opel = cars.get(0);
-    assertThat(opel.getModel()).isEqualTo("Astra");
-    assertThat(opel.getModel()).isEqualTo("Opel");
+    assertThat(opel.getType()).isEqualTo("Astra");
+    assertThat(opel.getProducer()).isEqualTo("Opel");
     assertThat(opel.getYear()).isEqualTo(2010);
     assertThat(opel.getMilleage()).isEqualTo(10_000);
   }
