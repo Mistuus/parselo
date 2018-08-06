@@ -98,7 +98,7 @@ public class Parselo {
    * Parse a matrix described by the specification from the given sheet name. Empty/Null cells will be mapped to the
    * default value specified in {@link CellConverter#getDefault()}.
    *
-   * @param sheetName the sheet name to parse
+   * @param sheetName the sheet name to parseStatic
    * @param cellConverter the function to convert a cell to an object of type T
    * @param spec the matrix specification
    * @param <T> the type of the elements in the matrix
@@ -120,19 +120,22 @@ public class Parselo {
    * Parse a list of objects of a specific type from the sheet given. The type of the objects parsed needs to be
    * Parselo annotated.
    *
-   * @param sheetName the sheet name to parse
+   * @param sheetName the sheet name to parseStatic
    * @param clazz the class with type T
-   * @param <T> the type of objects to parse
+   * @param <T> the type of objects to parseStatic
    * @return the list of objects of type T parsed from the sheet
    * @throws IllegalArgumentException if the class T is not annotated for Parselo
    */
   public <T> List<T> parse(String sheetName, Class<T> clazz) {
     HSSFSheet sheet = getSheet(sheetName);
-    return annotationParser.parse(sheet, clazz);
+    return annotationParser.parseStatic(sheet, clazz);
   }
 
   public <T> List<T> parse(String sheetName, Class<T> clazz, ParseloSpec spec) {
-    return null;
+    HSSFSheet sheet = getSheet(sheetName);
+    JodaBeanUtils.notNull(clazz, "clazz");
+    JodaBeanUtils.notNull(spec, "specification");
+    return annotationParser.parseDynamic(sheet, clazz, spec);
   }
 
   //--------------------------------------------------------------------
@@ -149,8 +152,8 @@ public class Parselo {
 
   private <T> List<T> parseList(HSSFSheet sheet, ParseloSpec spec, CellConverter<T> cellConverter) {
     List<T> array = Lists.newLinkedList();
-    int rowStart = spec.getRowStart();
-    int columnStart = spec.getColumnStartIndex();
+    int rowStart = spec.getRowStart() - 1;
+    int columnStart = spec.getColumnStartIndex() - 1;
 
     for (int rowOffset = 0; rowOffset < spec.rows(); rowOffset++) {
       for (int colOffset = 0; colOffset < spec.columns(); colOffset++) {
@@ -163,8 +166,8 @@ public class Parselo {
   }
 
   private <T> ParseloMatrix<T> parseMatrix(HSSFSheet sheet, ParseloSpec spec, CellConverter<T> cellConverter) {
-    final int rowStart = spec.getRowStart();
-    final int columnStart = spec.getColumnStartIndex();
+    final int rowStart = spec.getRowStart() - 1;
+    final int columnStart = spec.getColumnStartIndex() - 1;
 
     BiFunction<Integer, Integer, T> valueFunction =
         (rowOffset, columnOffset) -> cellConverter.convertWithDefault(

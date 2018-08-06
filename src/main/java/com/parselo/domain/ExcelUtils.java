@@ -50,7 +50,7 @@ class ExcelUtils {
       int charIdx = column.charAt(i) - 'A';
       position += (charIdx + 1) * (int) Math.pow(26, length - i - 1);
     }
-    return position - 1;
+    return position;
   }
 
 }

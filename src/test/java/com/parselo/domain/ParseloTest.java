@@ -33,8 +33,8 @@ class ParseloTest {
   @Test
   void parse_horizontalStringList_returnsArray() {
     ParseloSpec spec = ParseloSpec.builder()
-        .rowStart(1)
-        .rowEnd(1)
+        .rowStart(2)
+        .rowEnd(2)
         .columnStart("B")
         .columnEnd("E")
         .build();
@@ -47,8 +47,8 @@ class ParseloTest {
   @Test
   void parse_verticalStringList_returnList() {
     ParseloSpec spec = ParseloSpec.builder()
-        .rowStart(5)
-        .rowEnd(8)
+        .rowStart(6)
+        .rowEnd(9)
         .columnStart("B")
         .columnEnd("B")
         .build();
@@ -61,8 +61,8 @@ class ParseloTest {
   @Test
   void parse_stringMatrix_returnsMatrix() {
     ParseloSpec spec = ParseloSpec.builder()
-        .rowStart(1)
-        .rowEnd(3)
+        .rowStart(2)
+        .rowEnd(4)
         .columnStart("B")
         .columnEnd("E")
         .build();
@@ -80,8 +80,8 @@ class ParseloTest {
   @Test
   void parse_matrixWithEmptyFields_returnsFieldsWithEmptyStrings() {
     ParseloSpec spec = ParseloSpec.builder()
-        .rowStart(7)
-        .rowEnd(8)
+        .rowStart(8)
+        .rowEnd(9)
         .columnStart("B")
         .columnEnd("E")
         .build();

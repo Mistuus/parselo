@@ -29,12 +29,12 @@ import org.joda.beans.impl.direct.DirectMetaPropertyMap;
 public final class ParseloSpec implements ImmutableBean {
 
   /**
-   * The start row (zero-based) index.
+   * The start row index.
    */
   @PropertyDefinition
   private final int rowStart;
   /**
-   * The end row (zero-based) index.
+   * The end row index.
    */
   @PropertyDefinition
   private final int rowEnd;
@@ -98,7 +98,7 @@ public final class ParseloSpec implements ImmutableBean {
   }
 
   /**
-   * Provide the zero-based index for the start cell.
+   * Provide the index for the start cell.
    *
    * @return the zero-based index of the start cell
    */
@@ -107,7 +107,7 @@ public final class ParseloSpec implements ImmutableBean {
   }
 
   /**
-   * Get the zero-based index of the end cell.
+   * Get the index of the end cell.
    *
    * @return the zero-based index of the end cell
    */
