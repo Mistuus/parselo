@@ -1,7 +1,5 @@
 package com.parselo.examples;
 
-import java.time.LocalDate;
-
 import com.parselo.annotations.Parselo;
 import com.parselo.annotations.ParseloPosition;
 
@@ -18,7 +16,7 @@ public class DynamicCar {
   private Integer year;
 
   @ParseloPosition(position = 3)
-  private LocalDate boughtOn;
+  private Integer milleage;
 
 
   public DynamicCar() {
@@ -36,17 +34,7 @@ public class DynamicCar {
     return year;
   }
 
-  public LocalDate getBoughtOn() {
-    return boughtOn;
-  }
-
-  @Override
-  public String toString() {
-    return "DynamicCar{" +
-        "model='" + model + '\'' +
-        ", producer='" + producer + '\'' +
-        ", year=" + year +
-        ", boughtOn=" + boughtOn +
-        '}';
+  public Integer getMilleage() {
+    return milleage;
   }
 }
