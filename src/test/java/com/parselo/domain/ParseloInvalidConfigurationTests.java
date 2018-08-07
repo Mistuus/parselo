@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import com.parselo.annotations.ParseloRow;
 import com.parselo.examples.DynamicCar;
 import com.parselo.examples.NoClassAnnotation;
 import com.parselo.examples.NoFieldAnnotation;
@@ -26,8 +27,9 @@ public class ParseloInvalidConfigurationTests {
     assertThatThrownBy(() -> parselo.parse("Phones", missingClassAnnotationClazz))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage(
-            "Class {} is not annotated with Parselo annotations.",
-            missingClassAnnotationClazz.getName());
+            "Class %s needs to be annotated with %s",
+            missingClassAnnotationClazz.getName(),
+            ParseloRow.class.getName());
   }
 
   @Test

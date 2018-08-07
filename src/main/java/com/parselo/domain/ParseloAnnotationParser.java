@@ -180,7 +180,7 @@ class ParseloAnnotationParser {
   private <T extends Annotation> T extractClassAnnotation(Class<?> clazz, Class<T> annotationClass) {
     return Optional.ofNullable(clazz.getAnnotation(annotationClass))
         .orElseThrow(() ->
-            new IllegalArgumentException(String.format(
+            new InvalidConfigurationException(String.format(
                 "Class %s needs to be annotated with %s",
                 clazz.getCanonicalName(),
                 annotationClass.getName())));
