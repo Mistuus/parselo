@@ -160,9 +160,9 @@ class ParseloAnnotationParser {
 
     if (fields.isEmpty()) {
       throw new InvalidConfigurationException(String.format(
-          "Class %s has no fields annotated with %s.",
+          "Class %s has no fields annotated with %s",
           clazz.getName(),
-          ParseloColumn.class));
+          ParseloColumn.class.getName()));
     }
 
     return fields;

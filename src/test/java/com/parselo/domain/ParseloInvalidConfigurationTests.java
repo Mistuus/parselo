@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import com.parselo.annotations.ParseloColumn;
 import com.parselo.annotations.ParseloRow;
 import com.parselo.examples.DynamicCar;
 import com.parselo.examples.NoClassAnnotation;
@@ -39,8 +40,9 @@ public class ParseloInvalidConfigurationTests {
     assertThatThrownBy(() -> parselo.parse("Phones", noFieldAnnotationClazz))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage(
-            "Class %s has no field annotations.",
-            noFieldAnnotationClazz.getName());
+            "Class %s has no fields annotated with %s",
+            noFieldAnnotationClazz.getName(),
+            ParseloColumn.class.getName());
   }
 
   @Test
