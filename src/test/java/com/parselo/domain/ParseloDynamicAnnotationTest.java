@@ -40,6 +40,27 @@ public class ParseloDynamicAnnotationTest {
 
   @Test
   public void parseCar_withEmptyExcelCells_returnsCarsWithNullFields() {
-    Assertions.fail("To be implemented");
+    ParseloSpec spec = ParseloSpec.builder()
+        .rowStart(10)
+        .rowEnd(11)
+        .columnStart("B")
+        .columnEnd("E")
+        .build();
+
+    List<DynamicCar> cars = parselo.parse("Cars", DynamicCar.class, spec);
+
+    assertThat(cars).hasSize(2);
+
+    DynamicCar mercedes = cars.get(0);
+    assertThat(mercedes.getProducer()).isEqualTo("Mercedes");
+    assertThat(mercedes.getType()).isNull();
+    assertThat(mercedes.getYear()).isEqualTo(2000);
+    assertThat(mercedes.getMilleage()).isEqualTo(0);
+
+    DynamicCar ford = cars.get(1);
+    assertThat(ford.getProducer()).isNull();
+    assertThat(ford.getType()).isEqualTo("Fiesta");
+    assertThat(ford.getYear()).isEqualTo(2001);
+    assertThat(ford.getMilleage()).isEqualTo(1);
   }
 }

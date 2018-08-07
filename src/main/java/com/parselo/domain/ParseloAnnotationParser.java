@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 
 import com.google.common.collect.ImmutableList;
@@ -92,11 +93,14 @@ class ParseloAnnotationParser {
       Constructor<T> clazzConstructor) {
 
     try {
+      validateBounds(spec, sheet);
+
       int rowStart = spec.getRowStart() - 1;
       int rowCount = spec.rows();
       int columnStart = spec.getColumnStartIndex() - 1;
       int columnCount = spec.columns();
       clazzConstructor.setAccessible(true);
+
 
       List<T> rows = Lists.newLinkedList();
       for (int rowOffset = 0; rowOffset < rowCount; rowOffset++) {
@@ -115,6 +119,16 @@ class ParseloAnnotationParser {
       return rows;
     } catch (Exception e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  private void validateBounds(ParseloSpec spec, HSSFSheet sheet) {
+    if (spec.getRowStart() - 1 < sheet.getFirstRowNum() || spec.getRowEnd() - 1 > sheet.getLastRowNum()) {
+      throw new InvalidConfigurationException(String.format(
+          "Spec rows must be within the bounds of the sheet %s. Accepted bounds (one-based index): [%d, %d]",
+          sheet.getSheetName(),
+          sheet.getFirstRowNum() + 1,
+          sheet.getLastRowNum() + 1));
     }
   }
 
