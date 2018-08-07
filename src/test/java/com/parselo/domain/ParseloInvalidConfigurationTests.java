@@ -51,13 +51,13 @@ public class ParseloInvalidConfigurationTests {
         .rowStart(2)
         .rowEnd(5)
         .columnStart("B")
-        .columnEnd("I")
+        .columnEnd("I") // this is past the number of fields defined
         .build();
 
     assertThatThrownBy(() -> parselo.parse("Cars", DynamicCar.class, moreColumnsThanFields))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage(
-            "Expecting nr. of fields: {} to equal nr. of columns: {}",
+            "Expecting nr. of annotated fields=%d to equal nr. columns from spec=%d",
             DynamicCar.class.getDeclaredFields().length,
             moreColumnsThanFields.columns());
   }

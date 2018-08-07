@@ -64,12 +64,22 @@ class ParseloAnnotationParser {
     try {
       validateClassIsAnnotated(clazz, Parselo.class);
       List<Field> fields = extractSortedPositionAnnotatedFields(clazz);
+      validateFieldsAndSpec(fields, spec);
       return parseRows(sheet, spec, fields, clazz.getConstructor());
     } catch (NoSuchMethodException e) {
       throw new RuntimeException(
           String.format(
               "Class %s must have a public non-args constructor",
               clazz.getName()));
+    }
+  }
+
+  private void validateFieldsAndSpec(List<Field> fields, ParseloSpec spec) {
+    if (fields.size() != spec.columns()) {
+      throw new InvalidConfigurationException(String.format(
+          "Expecting nr. of annotated fields=%d to equal nr. columns from spec=%d",
+          fields.size(),
+          spec.columns()));
     }
   }
 
@@ -109,10 +119,19 @@ class ParseloAnnotationParser {
   }
 
   private Object convertCell(HSSFCell cell, Class<?> conversionType) {
-    if (cell == null) {
-      return null;
-    } else {
-      return CellConverters.getConverter(conversionType).convert(cell);
+    try {
+      if (cell == null) {
+        return null;
+      } else {
+        return CellConverters.getConverter(conversionType).convert(cell);
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(String.format(
+          "Exception encountered for cell at row=%d (zero-based index) and column=%d (zero-based index) " +
+              "when trying to convert to type=%s",
+          cell.getRowIndex(),
+          cell.getColumnIndex(),
+          conversionType.getName()));
     }
   }
 
