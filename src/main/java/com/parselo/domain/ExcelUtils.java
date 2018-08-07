@@ -30,6 +30,18 @@ class ExcelUtils {
   }
 
   /**
+   * Check whether number represents a valid  excel row index (one-based).
+   *
+   * @param index the index to check
+   * @param propertyName the name of the property the index represents
+   */
+  static void isValidRowNumber(int index, String propertyName) {
+    if (index <= 0) {
+      throw new IllegalArgumentException(propertyName + " expected to be a positive non-zero number but was '" + index + "'");
+    }
+  }
+
+  /**
    * Convert a case insensitive column name (like 'A', 'bb', 'cdA', 'CzA' etc) to the zero-based index of that column.
    *
    * @param column the column name
@@ -52,5 +64,4 @@ class ExcelUtils {
     }
     return position;
   }
-
 }

@@ -92,9 +92,9 @@ class ParseloAnnotationParser {
       List<Field> fields,
       Constructor<T> clazzConstructor) {
 
-    try {
-      validateBounds(spec, sheet);
+    validateBounds(spec, sheet);
 
+    try {
       int rowStart = spec.getRowStart() - 1;
       int rowCount = spec.rows();
       int columnStart = spec.getColumnStartIndex() - 1;
@@ -125,7 +125,7 @@ class ParseloAnnotationParser {
   private void validateBounds(ParseloSpec spec, HSSFSheet sheet) {
     if (spec.getRowStart() - 1 < sheet.getFirstRowNum() || spec.getRowEnd() - 1 > sheet.getLastRowNum()) {
       throw new InvalidConfigurationException(String.format(
-          "Spec rows must be within the bounds of the sheet %s. Accepted bounds (one-based index): [%d, %d]",
+          "Spec rows must be within the bounds of the sheet '%s'. Accepted bounds (one-based index): [%d, %d]",
           sheet.getSheetName(),
           sheet.getFirstRowNum() + 1,
           sheet.getLastRowNum() + 1));

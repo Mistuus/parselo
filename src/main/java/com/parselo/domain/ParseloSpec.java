@@ -8,7 +8,6 @@ import org.joda.beans.gen.PropertyDefinition;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.regex.Pattern;
 
 import org.joda.beans.Bean;
 import org.joda.beans.JodaBeanUtils;
@@ -48,18 +47,6 @@ public final class ParseloSpec implements ImmutableBean {
    */
   @PropertyDefinition(validate = "notBlank", get = "private")
   private final String columnEnd;
-
-  /**
-   * Check whether number is a positive integer.
-   *
-   * @param value the value to check
-   * @param propertyName the name of the property the value represents
-   */
-  private static void isValidRowNumber(int value, String propertyName) {
-    if (value < 0) {
-      throw new IllegalArgumentException(propertyName + " expected to be a positive number but was '" + value + "'");
-    }
-  }
 
   /**
    * Check whether the specification represents an horizontal array, i.e. only one row.
@@ -118,8 +105,8 @@ public final class ParseloSpec implements ImmutableBean {
   //------------------------------------------------------------------
   @ImmutableValidator
   private void validate() {
-    isValidRowNumber(rowStart, "rowStart");
-    isValidRowNumber(rowEnd, "rowEnd");
+    ExcelUtils.isValidRowNumber(rowStart, "rowStart");
+    ExcelUtils.isValidRowNumber(rowEnd, "rowEnd");
     ExcelUtils.isExcelColumn(columnStart, "columnStart");
     ExcelUtils.isExcelColumn(columnEnd, "columnEnd");
     if (rowStart > rowEnd) {

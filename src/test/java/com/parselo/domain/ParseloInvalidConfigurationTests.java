@@ -78,4 +78,18 @@ public class ParseloInvalidConfigurationTests {
             DynamicCar.class.getDeclaredFields().length,
             moreFieldsThanColumns.columns());
   }
+  
+  @Test
+  public void parseCar_withMoreRowsThanAvailableInSheet_throwsException() {
+    ParseloSpec startRowOutOfBounds = ParseloSpec.builder()
+        .rowStart(2)
+        .rowEnd(30)
+        .columnStart("A")
+        .columnEnd("D")
+        .build();
+
+    assertThatThrownBy(() -> parselo.parse("Cars", DynamicCar.class, startRowOutOfBounds))
+        .isInstanceOf(InvalidConfigurationException.class)
+        .hasMessageContaining("rows must be within the bounds");
+  }
 }
