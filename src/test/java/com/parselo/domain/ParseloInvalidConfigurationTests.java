@@ -64,18 +64,18 @@ public class ParseloInvalidConfigurationTests {
 
   @Test
   public void parseCar_withLessFieldsThanColumns_throwsException() {
-    ParseloSpec moreColumnsThanFields = ParseloSpec.builder()
+    ParseloSpec moreFieldsThanColumns = ParseloSpec.builder()
         .rowStart(2)
         .rowEnd(5)
         .columnStart("B")
         .columnEnd("C")
         .build();
 
-    assertThatThrownBy(() -> parselo.parse("Cars", DynamicCar.class, moreColumnsThanFields))
+    assertThatThrownBy(() -> parselo.parse("Cars", DynamicCar.class, moreFieldsThanColumns))
         .isInstanceOf(InvalidConfigurationException.class)
         .hasMessage(
-            "Expecting nr. of fields: {} to equal nr. of columns: {}",
+            "Expecting nr. of annotated fields=%d to equal nr. columns from spec=%d",
             DynamicCar.class.getDeclaredFields().length,
-            moreColumnsThanFields.columns());
+            moreFieldsThanColumns.columns());
   }
 }
