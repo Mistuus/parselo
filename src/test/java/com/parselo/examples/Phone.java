@@ -4,8 +4,9 @@ import java.time.LocalDate;
 
 import com.parselo.annotations.ParseloColumn;
 import com.parselo.annotations.ParseloRow;
+import com.parselo.domain.ConfigurationType;
 
-@ParseloRow(start = 4, end = 6)
+@ParseloRow(type = ConfigurationType.STATIC, start = 4, end = 6)
 public class Phone {
 
   @ParseloColumn(name = "B")

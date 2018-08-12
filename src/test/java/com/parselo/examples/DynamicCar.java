@@ -1,9 +1,10 @@
 package com.parselo.examples;
 
-import com.parselo.annotations.Parselo;
 import com.parselo.annotations.ParseloPosition;
+import com.parselo.annotations.ParseloRow;
+import com.parselo.domain.ConfigurationType;
 
-@Parselo
+@ParseloRow
 public class DynamicCar {
 
   @ParseloPosition(position = 0)

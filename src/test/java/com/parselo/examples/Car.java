@@ -2,8 +2,9 @@ package com.parselo.examples;
 
 import com.parselo.annotations.ParseloColumn;
 import com.parselo.annotations.ParseloRow;
+import com.parselo.domain.ConfigurationType;
 
-@ParseloRow(start = 3, end = 5)
+@ParseloRow(type = ConfigurationType.STATIC, start = 3, end = 5)
 public class Car {
 
   @ParseloColumn(name = "B")

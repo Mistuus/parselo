@@ -10,12 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 import org.apache.poi.hssf.usermodel.HSSFCell;
-import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.parselo.annotations.Parselo;
 import com.parselo.annotations.ParseloColumn;
 import com.parselo.annotations.ParseloPosition;
 import com.parselo.annotations.ParseloRow;
@@ -63,7 +61,7 @@ class ParseloAnnotationParser {
    */
   <T> List<T> parseDynamic(HSSFSheet sheet, Class<T> clazz, ParseloSpec spec) {
     try {
-      validateClassIsAnnotated(clazz, Parselo.class);
+      validateAnnotation(clazz);
       List<Field> fields = extractSortedPositionAnnotatedFields(clazz);
       validateFieldsAndSpec(fields, spec);
       return parseRows(sheet, spec, fields, clazz.getConstructor());
@@ -201,12 +199,12 @@ class ParseloAnnotationParser {
     return fields;
   }
 
-  private <T extends Annotation> void validateClassIsAnnotated(Class<?> clazz, Class<T> annotationClass) {
-    if (clazz.getAnnotation(annotationClass) == null) {
+  private void validateAnnotation(Class<?> clazz) {
+    if (clazz.getAnnotation(ParseloRow.class) == null) {
       throw new InvalidConfigurationException(String.format(
           "Expecting class %s to be annotated with %s",
           clazz.getName(),
-          annotationClass.getName()));
+          ParseloRow.class.getName()));
     }
   }
 

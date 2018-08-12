@@ -1,9 +1,5 @@
 package com.parselo;
 
-import java.util.List;
-
-import com.parselo.domain.Parselo;
-
 public class Main {
 
   public static void main(String[] args) {
